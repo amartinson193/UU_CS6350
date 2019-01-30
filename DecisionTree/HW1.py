@@ -3,22 +3,29 @@ import collections
 import scipy.stats as stats
 import numpy
 
-
-# TODO
-# Calculate Entropy of given attribute
-def entropy(examples, attribute):
-    label_col = len(examples[0])-1
-    label_dict = {}
-    for i in range(len(examples)):
-        label_dict[examples[i][label_col]] += 1
-    else:
-        label_dict[examples[i][label_col]] = 1
-    return 0
-
-
 # TODO
 # Calculate Majority Error of given attribute
-def majority_error(examples, attribute):
+def gain_majority_error(examples, attribute):
+    """
+    This function returns information gain for a set of examples if it were split on a provided attribute.
+    Gain here is calculated using majority error (for a discrete distribution.)
+    Higher information gain implies a better split.
+    :param examples: List of all examples
+    :param attribute: Attribute being considered for next split
+    :return: Information Gain if this set were split on provided attribute.
+    """
+    return 0
+
+# TODO
+def gain_gini_index(examples, attribute):
+    """
+    This function returns information gain for a set of examples if it were split on a provided attribute.
+    Gain here is calculated using the Gini Index (for a discrete distribution.)
+    Higher information gain implies a better split.
+    :param examples: List of all examples
+    :param attribute: Attribute being considered for next split
+    :return: Information Gain if this set were split on provided attribute.
+    """
     return 0
 
 
@@ -88,7 +95,7 @@ def tree():
 
 # TODO
 def build_decision_tree():
-    id3([1],[1],[1])
+    id3([1],[1],[1], -1)
 
 
 ########################################################################################################
@@ -101,40 +108,122 @@ def main():
 
 
 """
-    all_data = []
-    training_data = []
-    test_data = []
-    print(stats.mode([1,1,2])[0][0])
-    
-    file = open("testfile.csv","w")
-    
-    file.write("This is a test,and another test")
+all_data = []
+training_data = []
+test_data = []
+print(stats.mode([1,1,2])[0][0])
+
+file = open("testfile.csv","w")
+
+file.write("This is a test,and another test")
 
 
-    data = data_parsing("DecisionTree/car/train.csv")
+data = data_parsing("DecisionTree/car/train.csv")
+
+data = numpy.array(data)
+
+print(data)
+
+print(data.transpose())
     
-    data = numpy.array(data)
-    
-    print(data)
-    
-    print(data.transpose())
+test_dict = {1: 5, 2: 6}
+print(1 in test_dict)
+print(5 in test_dict)
+
+
+
+values = [0,0,0,1]
+labels = [0,0,1,1]
+pair = zip(values,labels)
+pair = list(pair)
+
+print(entropy(pair))
 """
 
 
+# pass in [label] list
+def entropy(labels):
+    count = len(labels)
+    label_counts = {}
+    result = 0
+    for instance in labels:
+        if instance in label_counts:
+            label_counts[instance] += 1
+        else:
+            label_counts[instance] = 1
+    for label in label_counts:
+        frequency = label_counts[label] / count
+        result -= frequency * numpy.log2(frequency)
+    return result
 
 
+# should receive pairs of values and labels, return list containing one list per value,
+# containing value-label pair lists.
+def split_attribute(examples):
+    result_list = []
+    values = {}
+
+    for instance in examples:
+        if instance[0] in values:
+            values[instance[0]].append(instance)
+        else:
+            values[instance[0]] = []
+            values[instance[0]].append(instance)
+
+    for pairs in values:
+        result_list.append(values[pairs])
+
+    return result_list
 
 
+# returns one 'column' of attributes or labels,presuming examples are fed as rows.
+def get_attribute(examples, attribute_index):
+    examples_trans = numpy.array(examples).transpose().tolist()
+    return examples_trans[len(examples_trans)-1]
 
 
+# takes in full list of example lists, and an index, and returns the set of value,label pairs for all instances
+# provided in examples
+def get_attribute_with_label(examples, attribute_index):
+    examples_trans = numpy.array(examples).transpose().tolist()
+    attributes = examples_trans[attribute_index]
+    labels = examples_trans[len(examples_trans)-1]
+    return list(zip(attributes,labels))
 
 
+# pass in [value,label] pairs, this should peel off and return all labels.
+def create_label_list(examples):
+    labels = []
+    for instance in examples:
+        labels.append(instance[1])
+    return labels
 
 
+# should receive full list of [example] lists, including all attributes and labels. Also the index of the attribute
+# to calculate gain on.
+def information_gain(examples, attribute_index):
+    labels = get_attribute(examples, len(examples)-1)
+    gain = entropy(labels)
+
+    attribute_pairs = get_attribute_with_label(examples,attribute_index)
+    values = split_attribute(attribute_pairs)
+
+    for value in values:
+        value_labels = create_label_list(value)
+        gain -= entropy(value_labels) * len(value_labels) / len(examples)
+
+    return gain
 
 
+# TESTS
+data = data_parsing("DecisionTree/BooleanClassifier_TrainingData.csv")
 
+data.pop(0)
 
+print(data)
+
+for i in range(len(data[0])-1):
+    print(information_gain(data,i))
 
 
 
