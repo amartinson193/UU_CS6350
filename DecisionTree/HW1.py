@@ -344,6 +344,7 @@ def id3(examples, attributes, labels, max_depth, info_gain_type, numeric_cols):
         2 - Majority Error
         3 - Gini Index
     :param numeric_cols: List of indices of numeric columns, to be provided with initial data.
+    :param missing_attributes: List of indices of attributes containing missing values
     :return: node containing either an attribute to split, or a label to assign.
     """
 
@@ -368,6 +369,9 @@ def id3(examples, attributes, labels, max_depth, info_gain_type, numeric_cols):
     node[-math.inf] = get_key_by_max_value(labels) # add most common label in case unknown attribute values found
     new_attributes = list(attributes)
     new_attributes.remove(node[math.inf])
+
+    # add most common value to None key for looking up unknown values in test.
+    node[None] = get_key_by_max_value(get_attribute_values(examples, node[math.inf]))
 
     # lazily handling numeric values with separate functions.
     # for numeric values, index 0 contains reference value (median), while -1 is a branch for values less than median,
@@ -441,8 +445,9 @@ def fill_missing_values(examples, missing_identifier):
         read in again.
     :param examples: List of examples, each of which is a list of values.
     :param missing_identifier: Data within examples indicating a missing value.
-    :return: None
+    :return: List of indices in examples containing unknown values
     """
+    missing_attributes = []
     for index in range(len(examples[0])):
         attribute_dict = {}
         for instance in examples:
@@ -451,11 +456,13 @@ def fill_missing_values(examples, missing_identifier):
             else:
                 attribute_dict[instance[index]] = 1
         if missing_identifier in attribute_dict:
+            missing_attributes.append(index)
             attribute_dict.pop(missing_identifier)
             new_value = get_key_by_max_value(attribute_dict)
             for instance_replace in examples:
                 if instance_replace[index] == missing_identifier:
                     instance_replace[index] = new_value
+    return missing_attributes
 
 
 def tree():
@@ -485,15 +492,20 @@ def build_decision_tree(examples, max_depth, info_gain_type, numeric_cols, missi
 ########################################################################################################
 
 
-def get_label(learned_tree, example, numeric_cols):
+def get_label(learned_tree, example, numeric_cols, missing_identifier):
     """
 
     :param learned_tree: Learned tree
     :param example: List of examples, each of which is a list of values.
     :param numeric_cols: list of columns which are numeric.
+    :param missing_identifier: Data within examples indicating a missing value.
     :return: Label that learned tree assigns the given example.
     """
     attribute_index = learned_tree[math.inf]
+
+    # If the value is missing, pull the most common value of training examples.
+    if example[attribute_index] == missing_identifier:
+        example[attribute_index] = learned_tree[None]
 
     # If this is a numeric attribute, compare the value to median (stored in tree[0]);
     # if greater, go to branch 1, else branch -1.
@@ -509,12 +521,12 @@ def get_label(learned_tree, example, numeric_cols):
     if not isinstance(lookup, collections.defaultdict):
         return lookup
     if math.inf in lookup:
-        return get_label(lookup, example, numeric_cols)
+        return get_label(lookup, example, numeric_cols, missing_identifier)
     else:
         return learned_tree[-math.inf]
 
 
-def test_tree(learned_tree, examples, numeric_cols):
+def test_tree(learned_tree, examples, numeric_cols, missing_identifier):
     """
     Tests data against a learned tree and reports error.
     :param learned_tree: Learned tree
@@ -527,7 +539,7 @@ def test_tree(learned_tree, examples, numeric_cols):
 
     learned_labels = []
     for instance in examples:
-        label = get_label(learned_tree, instance, numeric_cols)
+        label = get_label(learned_tree, instance, numeric_cols, missing_identifier)
         learned_labels.append(label)
 
     matches = 0
@@ -535,8 +547,6 @@ def test_tree(learned_tree, examples, numeric_cols):
         if actual_labels[i] == learned_labels[i]:
             matches += 1
     return matches, len(actual_labels)
-
-
 
 ########################################################################################################
 ##########                                   BEGIN MAIN                                       ##########
@@ -550,27 +560,39 @@ def test():
     :return: None
     """
 
-    # test on car data set
+    #### test on car data set
     data = data_parsing("car/train.csv")
     test_data = data_parsing("car/test.csv")
     numeric_cols = []
     missing_identifier = None
-    # info gain type - 1 for entropy, 2 for majority error, 3 for gini index.
+    # test tree against original training examples.
     for gain in range(1,4):
-        for depth in range(1,8):
+        for depth in range(1,7):
             learned_tree = build_decision_tree(data, depth, gain, numeric_cols, missing_identifier)
-            error_nums = test_tree(learned_tree, test_data, numeric_cols)
+            error_nums = test_tree(learned_tree, data, numeric_cols, missing_identifier)
             if gain == 1:
                 gain_type = "Entropy"
             elif gain == 2:
                 gain_type = "Majority Error"
             else:
                 gain_type = "Gini Index"
-            print("Using", gain_type, "and a maximum tree depth of", depth,
-                  ",", error_nums[0], "of", error_nums[1], "examples were correctly mapped,",
-                  "demonstrating an error rate of", "{0:.2%}".format(1-error_nums[0]/error_nums[1]))
+            print("Car Data; Training; Gain -", gain_type, "Depth -", depth, "Correct -", error_nums[0], "Total -",
+                  error_nums[1],"Err -", "{0:.2%}".format(1-error_nums[0]/error_nums[1]))
+    # test tree against test examples.
+    for gain in range(1,4):
+        for depth in range(1,7):
+            learned_tree = build_decision_tree(data, depth, gain, numeric_cols, missing_identifier)
+            error_nums = test_tree(learned_tree, test_data, numeric_cols, missing_identifier)
+            if gain == 1:
+                gain_type = "Entropy"
+            elif gain == 2:
+                gain_type = "Majority Error"
+            else:
+                gain_type = "Gini Index"
+            print("Car data; Test; Gain -", gain_type, "Depth -", depth, "Correct -", error_nums[0], "Total -",
+                  error_nums[1],"Err -", "{0:.2%}".format(1-error_nums[0]/error_nums[1]))
 
-    # test on bank data set
+    #### test on bank data set against training examples, no missing values
     data = data_parsing("bank/train.csv")
     test_data = data_parsing("bank/test.csv")
     numeric_cols = [0,5,9,11,12,13,14] # columns with numeric data
@@ -579,16 +601,54 @@ def test():
     for gain in range(1,4):
         for depth in range(1,17):
             learned_tree = build_decision_tree(data, depth, gain, numeric_cols, missing_identifier)
-            error_nums = test_tree(learned_tree, test_data, numeric_cols)
+            error_nums = test_tree(learned_tree, data, numeric_cols, missing_identifier)
             if gain == 1:
                 gain_type = "Entropy"
             elif gain == 2:
                 gain_type = "Majority Error"
             else:
                 gain_type = "Gini Index"
-            print("Using", gain_type, "and a maximum tree depth of", depth,
-                  ",", error_nums[0], "of", error_nums[1], "examples were correctly mapped,",
-                  "demonstrating an error rate of", "{0:.2%}".format(1-error_nums[0]/error_nums[1]))
+            print("Bank data; Training; Gain -", gain_type, "Depth -", depth, "Correct -", error_nums[0], "Total -",
+                  error_nums[1],"Err -", "{0:.2%}".format(1-error_nums[0]/error_nums[1]))
+
+    # test on bank data set against test examples.
+    data = data_parsing("bank/train.csv")
+    test_data = data_parsing("bank/test.csv")
+    numeric_cols = [0,5,9,11,12,13,14] # columns with numeric data
+    map_numeric_data(data,numeric_cols) # convert numeric data to int type (for this specific application)
+    missing_identifier = None
+    for gain in range(1,4):
+        for depth in range(1,17):
+            learned_tree = build_decision_tree(data, depth, gain, numeric_cols, missing_identifier)
+            error_nums = test_tree(learned_tree, test_data, numeric_cols, missing_identifier)
+            if gain == 1:
+                gain_type = "Entropy"
+            elif gain == 2:
+                gain_type = "Majority Error"
+            else:
+                gain_type = "Gini Index"
+            print("Bank data; Test; Gain -", gain_type, "Depth -", depth, "Correct -", error_nums[0], "Total -",
+                  error_nums[1],"Err -", "{0:.2%}".format(1-error_nums[0]/error_nums[1]))
+
+    #### test on bank data set, with unknown values.
+    data = data_parsing("bank/train.csv")
+    training_data_to_test = data_parsing("bank/train.csv")
+    numeric_cols = [0,5,9,11,12,13,14] # columns with numeric data
+    map_numeric_data(data,numeric_cols) # convert numeric data to int type (for this specific application)
+    missing_identifier = "unknown"
+    for gain in range(1,4):
+        for depth in range(1,17):
+            learned_tree = build_decision_tree(data, depth, gain, numeric_cols, missing_identifier)
+            error_nums = test_tree(learned_tree, training_data_to_test, numeric_cols, missing_identifier)
+            missing_identifier = None
+            if gain == 1:
+                gain_type = "Entropy"
+            elif gain == 2:
+                gain_type = "Majority Error"
+            else:
+                gain_type = "Gini Index"
+            print("Bank data; Training; Gain -", gain_type, "Depth -", depth, "Correct -", error_nums[0], "Total -",
+                  error_nums[1],"Err -", "{0:.2%}".format(1-error_nums[0]/error_nums[1]))
 
     # test on bank data set, with unknown values.
     data = data_parsing("bank/train.csv")
@@ -599,7 +659,7 @@ def test():
     for gain in range(1,4):
         for depth in range(1,17):
             learned_tree = build_decision_tree(data, depth, gain, numeric_cols, missing_identifier)
-            error_nums = test_tree(learned_tree, test_data, numeric_cols)
+            error_nums = test_tree(learned_tree, test_data, numeric_cols, missing_identifier)
             missing_identifier = None
             if gain == 1:
                 gain_type = "Entropy"
@@ -607,9 +667,8 @@ def test():
                 gain_type = "Majority Error"
             else:
                 gain_type = "Gini Index"
-            print("Using", gain_type, "and a maximum tree depth of", depth,
-                  ",", error_nums[0], "of", error_nums[1], "examples were correctly mapped,",
-                  "demonstrating an error rate of", "{0:.2%}".format(1-error_nums[0]/error_nums[1]))
+            print("Bank data; Test; Gain -", gain_type, "Depth -", depth, "Correct -", error_nums[0], "Total -",
+                  error_nums[1],"Err -", "{0:.2%}".format(1-error_nums[0]/error_nums[1]))
 
 
 test()
