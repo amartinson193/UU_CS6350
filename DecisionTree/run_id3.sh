@@ -1,3 +1,3 @@
 #!/bin/bash
-python HW1.py
+python3 HW1.py
 $SHELL
