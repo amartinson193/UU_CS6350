@@ -496,9 +496,10 @@ def build_decision_tree(file_path, max_depth, info_gain_type, numeric_cols, miss
     if len(numeric_cols) > 0:
         map_numeric_data(examples, numeric_cols)  # convert numeric data to int type (for this specific application)
 
-    labels = get_attribute_values(examples, len(examples[0])-1)
     if missing_identifier is not None:
         fill_missing_values(examples, missing_identifier)
+
+    labels = get_attribute_values(examples, len(examples[0]) - 1)
 
     return id3(examples, list(range(len(examples[0])-1)), labels, max_depth, info_gain_type, numeric_cols)
 

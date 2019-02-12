@@ -57,7 +57,7 @@ def test():
                 gain_type = "Majority Error"
             else:
                 gain_type = "Gini Index"
-            print("Bank data; Training; Gain -", gain_type, "Depth -", depth, "Correct -", error_nums[0], "Total -",
+            print("Bank data, no missing data; Training; Gain -", gain_type, "Depth -", depth, "Correct -", error_nums[0], "Total -",
                   error_nums[1],"Err -", "{0:.2%}".format(1-error_nums[0]/error_nums[1]))
 
     # test on bank data set against test examples.
@@ -73,7 +73,7 @@ def test():
                 gain_type = "Majority Error"
             else:
                 gain_type = "Gini Index"
-            print("Bank data; Test; Gain -", gain_type, "Depth -", depth, "Correct -", error_nums[0], "Total -",
+            print("Bank data, no missing data; Test; Gain -", gain_type, "Depth -", depth, "Correct -", error_nums[0], "Total -",
                   error_nums[1],"Err -", "{0:.2%}".format(1-error_nums[0]/error_nums[1]))
 
     #### test on bank data set, with unknown values.
@@ -83,14 +83,13 @@ def test():
         for depth in range(1,17):
             learned_tree = ID3.build_decision_tree("bank/train.csv", depth, gain, numeric_cols, missing_identifier)
             error_nums = ID3.test_tree(learned_tree, "bank/train.csv", numeric_cols, missing_identifier)
-            missing_identifier = None
             if gain == 1:
                 gain_type = "Entropy"
             elif gain == 2:
                 gain_type = "Majority Error"
             else:
                 gain_type = "Gini Index"
-            print("Bank data; Training; Gain -", gain_type, "Depth -", depth, "Correct -", error_nums[0], "Total -",
+            print("Bank data with missing data; Training; Gain -", gain_type, "Depth -", depth, "Correct -", error_nums[0], "Total -",
                   error_nums[1],"Err -", "{0:.2%}".format(1-error_nums[0]/error_nums[1]))
 
     # test on bank data set, with unknown values.
@@ -100,14 +99,13 @@ def test():
         for depth in range(1,17):
             learned_tree = ID3.build_decision_tree("bank/train.csv", depth, gain, numeric_cols, missing_identifier)
             error_nums = ID3.test_tree(learned_tree, "bank/test.csv", numeric_cols, missing_identifier)
-            missing_identifier = None
             if gain == 1:
                 gain_type = "Entropy"
             elif gain == 2:
                 gain_type = "Majority Error"
             else:
                 gain_type = "Gini Index"
-            print("Bank data; Test; Gain -", gain_type, "Depth -", depth, "Correct -", error_nums[0], "Total -",
+            print("Bank data with missing data; Test; Gain -", gain_type, "Depth -", depth, "Correct -", error_nums[0], "Total -",
                   error_nums[1],"Err -", "{0:.2%}".format(1-error_nums[0]/error_nums[1]))
 
 
