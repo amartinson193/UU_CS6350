@@ -7,6 +7,10 @@ Code may be found at https://github.com/u1201441/UU_CS6350
 
 ~~~~~~
 
+Decision Tree
+-------------
+-------------
+
 ID3
 -------
 
@@ -40,7 +44,7 @@ build_decision_tree
             node[None]: Contains the most common training value for the attribute in math.inf in case the test 
             example is missing data or a new value on this attribute.
             node['value']: For some 'value' of the attribute in math.inf, this will either contain a subtree splitting on
-             the next attribute ora leaf containing a label.
+             the next attribute or a leaf containing a label.
 
 ~~~~~~~~~~
 
@@ -79,17 +83,36 @@ test_tree
 
 ~~~~~~~~~~
 
+Ensemble Learning
+-----------------
+-----------------
+
 AdaBoost
-----------------------
+--------
 
 Coming Soon
 
-Bagging
----------------------
+--------
+
+Bagged Trees
+-------
 
 Coming Soon
+
+-------
+
+Random Forest
+-------
+
+Coming Soon
+
+-------
 
 Linear Regression
---------------------------------
+-----------------
+-----------------
+
+Least Mean Squares
+------------------
 
 Coming Soon

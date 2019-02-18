@@ -6,10 +6,8 @@ This is an implementation of the ID3 algorithm for CS6350 at University of Utah 
 Supports Entropy, Majority Error, and Gini index gain.
 Also supports arbitrary categorical attributes, with a single label per example.
 
-Apologies for several cases of lazy implementation. There are numerous opportunities for improving runtime.
-
-Should make this work for multiple labels, but not necessary for HW1
-
+Future implementation:
+    Add functionality for continuous classifiers (non-binary labels)
 
 """
 
