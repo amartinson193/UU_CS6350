@@ -91,9 +91,9 @@ def get_attribute_values(examples, attribute_index):
     values = {}
     for instance in examples:
         if instance[attribute_index] in values:
-            values[instance[attribute_index]] += 1
+            values[instance[attribute_index]] += instance[WEIGHT_INDEX]
         else:
-            values[instance[attribute_index]] = 1
+            values[instance[attribute_index]] = instance[WEIGHT_INDEX]
     return values
 
 
@@ -110,17 +110,18 @@ def get_attribute_values_numeric(examples, attribute_index, median):
     for instance in examples:
         if instance[attribute_index] > median:
             if 1 in values:
-                values[1] += 1
+                values[1] += instance[WEIGHT_INDEX]
             else:
-                values[1] = 1
+                values[1] = instance[WEIGHT_INDEX]
         else:
             if -1 in values:
-                values[-1] += 1
+                values[-1] += instance[WEIGHT_INDEX]
             else:
-                values[-1] = 1
+                values[-1] = instance[WEIGHT_INDEX]
     return values
 
 
+# This is deprecated
 def get_attribute_with_label(examples, attribute_index):
     """
     Get all value, label pairs from a set of examples.
@@ -131,7 +132,8 @@ def get_attribute_with_label(examples, attribute_index):
     examples_trans = numpy.array(examples).transpose().tolist()
     attributes = examples_trans[attribute_index]
     labels = examples_trans[LABEL_INDEX]
-    return list(zip(attributes, labels))
+    weights = examples_trans[WEIGHT_INDEX]
+    return list(zip(attributes, labels, weights))
 
 
 def create_label_list(examples, attribute_index, value):
@@ -146,9 +148,9 @@ def create_label_list(examples, attribute_index, value):
     for instance in examples:
         if instance[attribute_index] == value:
             if instance[LABEL_INDEX] in labels:
-                labels[instance[LABEL_INDEX]] += 1
+                labels[instance[LABEL_INDEX]] += instance[WEIGHT_INDEX]
             else:
-                labels[instance[LABEL_INDEX]] = 1
+                labels[instance[LABEL_INDEX]] = instance[WEIGHT_INDEX]
     return labels
 
 
@@ -166,15 +168,15 @@ def create_label_list_numeric(examples, attribute_index, value, median):
         if value == 1:
             if instance[attribute_index] > median:
                 if instance[LABEL_INDEX] in labels:
-                    labels[instance[LABEL_INDEX]] += 1
+                    labels[instance[LABEL_INDEX]] += instance[WEIGHT_INDEX]
                 else:
-                    labels[instance[LABEL_INDEX]] = 1
+                    labels[instance[LABEL_INDEX]] = instance[WEIGHT_INDEX]
         else:
             if instance[attribute_index] <= median:
                 if instance[LABEL_INDEX] in labels:
-                    labels[instance[LABEL_INDEX]] += 1
+                    labels[instance[LABEL_INDEX]] += instance[WEIGHT_INDEX]
                 else:
-                    labels[instance[LABEL_INDEX]] = 1
+                    labels[instance[LABEL_INDEX]] = instance[WEIGHT_INDEX]
 
     return labels
 
@@ -188,7 +190,7 @@ def get_median(examples, col):
     """
     values = []
     for instance in examples:
-        values.append(instance[col])
+        values.append(instance[col]*instance[WEIGHT_INDEX])
     return numpy.median(values)
 
 
@@ -230,7 +232,7 @@ def information_gain(examples, attribute_index, info_gain_type):
 
     for value in values:
         value_labels = create_label_list(examples, attribute_index, value)
-        gain -= purity_func(value_labels) * sum(value_labels.values()) / len(examples)
+        gain -= purity_func(value_labels) * sum(value_labels.values()) / sum(values.values())
 
     return gain
 
@@ -264,7 +266,7 @@ def information_gain_numeric(examples, attribute_index, info_gain_type):
 
     for value in values:
         value_labels = create_label_list_numeric(examples, attribute_index, value, median)
-        gain -= purity_func(value_labels) * sum(value_labels.values()) / len(examples)
+        gain -= purity_func(value_labels) * sum(value_labels.values()) / sum(values.values())
 
     return gain
 
@@ -289,6 +291,7 @@ def get_next_attribute(examples, attributes, info_gain_type, numeric_cols):
             gain = information_gain_numeric(examples, attribute, info_gain_type)
         else:
             gain = information_gain(examples, attribute, info_gain_type)
+
         if gain > next_attribute[1]:
             next_attribute = (attribute, gain)
     return next_attribute[0]
@@ -409,22 +412,29 @@ def id3(examples, attributes, labels, max_depth, info_gain_type, numeric_cols):
     return node
 
 
-def data_parsing(csv_file):
+def data_parsing(csv_file, numeric_cols):
     """
     Reads in a file to a list of lists.
     This code was provided in the assignment description and used directly.
     :param csv_file: File to be read
+    :param numeric_cols: List of indices indicating which columns are numeric
     :return: List of lists where each member list is a comma separated line from file.
     """
+    global LABEL_INDEX
+    global WEIGHT_INDEX
     data = []
+
     with open(csv_file, 'r') as f:
         for line in f:
             data.append(line.strip().split(','))
-            data[len(data)-1].append(1)
+            data[len(data)-1].append(1)  # Add weight of 1 to all examples.
 
     # Storing a weight factor in the last index.
     LABEL_INDEX = len(data[0])-2
     WEIGHT_INDEX = len(data[0])-1
+
+    if len(numeric_cols) > 0:
+        map_numeric_data(data, numeric_cols)  # convert numeric data to int type (for this specific application)
 
     return data
 
@@ -483,10 +493,10 @@ def tree():
     return collections.defaultdict(tree)
 
 
-def build_decision_tree(file_path, max_depth, info_gain_type, numeric_cols, missing_identifier):
+def build_decision_tree(example_param, max_depth, info_gain_type, numeric_cols, missing_identifier):
     """
     Build a decision tree using ID3
-    :param file_path: file with data to test
+    :param example_param: Data, or file path to data
     :param max_depth: Maximum depth of this tree
     :param info_gain_type:  integer to identify preferred method of gain.
         1 - Entropy
@@ -497,10 +507,12 @@ def build_decision_tree(file_path, max_depth, info_gain_type, numeric_cols, miss
     :return: DefaultDict root of a decision tree
     """
 
-    examples = data_parsing(file_path)
-
-    if len(numeric_cols) > 0:
-        map_numeric_data(examples, numeric_cols)  # convert numeric data to int type (for this specific application)
+    if isinstance(example_param, str):
+        examples = data_parsing(example_param, numeric_cols)
+    elif isinstance(example_param, list):
+        examples = example_param
+    else:
+        raise AttributeError("Invalid data type: Please pass either file path or list of examples to build tree.")
 
     if missing_identifier is not None:
         fill_missing_values(examples, missing_identifier)
@@ -549,31 +561,35 @@ def get_label(learned_tree, example, numeric_cols, missing_identifier):
         return learned_tree[-math.inf]
 
 
-def test_tree(learned_tree, file_path, numeric_cols, missing_identifier):
+def test_tree(learned_tree, example_param, numeric_cols, missing_identifier):
     """
     Tests data against a learned tree and reports error.
     :param learned_tree: Learned tree
-    :param file_path: file with data to test
+    :param example_param: data, or file path to data
     :param numeric_cols: list of columns which are numeric.
     :param missing_identifier: Data within examples indicating a missing value.
     :return: integer number of matches, and integer number of total examples.
     """
 
-    # Get List of examples, each of which is a list of values.
-    examples = data_parsing(file_path)
-    if len(numeric_cols) > 0:
-        map_numeric_data(examples, numeric_cols)  # convert numeric data to int type (for this specific application)
+    if isinstance(example_param, str):
+        examples = data_parsing(example_param, numeric_cols)
+    elif isinstance(example_param, list):
+        examples = example_param
+    else:
+        raise AttributeError("Invalid data type: Please pass either file path or list of examples to build tree.")
 
-    actual_labels = [inst[LABEL_INDEX] for inst in examples]
+    actual_labels = [tuple([inst[LABEL_INDEX], inst[WEIGHT_INDEX]]) for inst in examples]
 
     learned_labels = []
     for instance in examples:
         label = get_label(learned_tree, instance, numeric_cols, missing_identifier)
-        learned_labels.append(label)
+        learned_labels.append(tuple([label, instance[WEIGHT_INDEX]]))
 
     matches = 0
+    total = 0
     for i in range(len(learned_labels)):
-        if actual_labels[i] == learned_labels[i]:
-            matches += 1
-    return matches, len(actual_labels)
+        if actual_labels[i][0] == learned_labels[i][0]:
+            matches += learned_labels[i][1]
+        total += actual_labels[i][1]
+    return matches, total
 
