@@ -22,6 +22,11 @@ import math
 ########################################################################################################
 ########################################################################################################
 
+# Set in data_parsing; based on file input.
+LABEL_INDEX = -1
+WEIGHT_INDEX = -1
+
+
 def majority_error(labels):
     """
     This function returns majority error for a set of labels, in a discrete distribution.
@@ -32,9 +37,8 @@ def majority_error(labels):
     majority_label = get_majority_label(labels)
     result = 0
     for value in labels:
-        if value == majority_label:
-            continue
-        result += labels[value]
+        if value != majority_label:
+            result += labels[value]
     return result / count
 
 
@@ -126,7 +130,7 @@ def get_attribute_with_label(examples, attribute_index):
     """
     examples_trans = numpy.array(examples).transpose().tolist()
     attributes = examples_trans[attribute_index]
-    labels = examples_trans[len(examples_trans) - 1]
+    labels = examples_trans[LABEL_INDEX]
     return list(zip(attributes, labels))
 
 
@@ -139,13 +143,12 @@ def create_label_list(examples, attribute_index, value):
     :return: Dict of labels, where value is frequency of each label.
     """
     labels = {}
-    label_index = len(examples[0]) - 1
     for instance in examples:
         if instance[attribute_index] == value:
-            if instance[label_index] in labels:
-                labels[instance[label_index]] += 1
+            if instance[LABEL_INDEX] in labels:
+                labels[instance[LABEL_INDEX]] += 1
             else:
-                labels[instance[label_index]] = 1
+                labels[instance[LABEL_INDEX]] = 1
     return labels
 
 
@@ -159,20 +162,19 @@ def create_label_list_numeric(examples, attribute_index, value, median):
     :return: Dict of labels, where value is frequency of each label.
     """
     labels = {}
-    label_index = len(examples[0]) - 1
     for instance in examples:
         if value == 1:
             if instance[attribute_index] > median:
-                if instance[label_index] in labels:
-                    labels[instance[label_index]] += 1
+                if instance[LABEL_INDEX] in labels:
+                    labels[instance[LABEL_INDEX]] += 1
                 else:
-                    labels[instance[label_index]] = 1
+                    labels[instance[LABEL_INDEX]] = 1
         else:
             if instance[attribute_index] <= median:
-                if instance[label_index] in labels:
-                    labels[instance[label_index]] += 1
+                if instance[LABEL_INDEX] in labels:
+                    labels[instance[LABEL_INDEX]] += 1
                 else:
-                    labels[instance[label_index]] = 1
+                    labels[instance[LABEL_INDEX]] = 1
 
     return labels
 
@@ -222,7 +224,7 @@ def information_gain(examples, attribute_index, info_gain_type):
     elif info_gain_type == 3:
         purity_func = gini_index
 
-    labels = get_attribute_values(examples, len(examples[0]) - 1)
+    labels = get_attribute_values(examples, LABEL_INDEX)
     gain = purity_func(labels)
     values = get_attribute_values(examples, attribute_index)
 
@@ -256,7 +258,7 @@ def information_gain_numeric(examples, attribute_index, info_gain_type):
     median = get_median(examples, attribute_index)
 
     # need to add logic for numeric labels, but not necessary for assignment.
-    labels = get_attribute_values(examples, len(examples[0]) - 1)
+    labels = get_attribute_values(examples, LABEL_INDEX)
     gain = purity_func(labels)
     values = get_attribute_values_numeric(examples, attribute_index, median)
 
@@ -380,14 +382,14 @@ def id3(examples, attributes, labels, max_depth, info_gain_type, numeric_cols):
         if len(examples_less) == 0:
             return get_key_by_max_value(labels)
         # Otherwise, recursively add the next subtree
-        new_labels = get_attribute_values(examples_less, len(examples[0]) - 1)
+        new_labels = get_attribute_values(examples_less, LABEL_INDEX)
         node[-1] = id3(examples_less, new_attributes, new_labels, max_depth - 1, info_gain_type, numeric_cols)
 
         examples_greater = get_examples_by_value_numeric(examples, node[math.inf], 1, node[0])
         if len(examples_greater) == 0:
             return get_key_by_max_value(labels)
         # Otherwise, recursively add the next subtree
-        new_labels = get_attribute_values(examples_greater, len(examples[0]) - 1)
+        new_labels = get_attribute_values(examples_greater, LABEL_INDEX)
         node[1] = id3(examples_greater, new_attributes, new_labels, max_depth - 1, info_gain_type, numeric_cols)
     else:
         # Iterate through values v of a (not label, but value of the attribute, like tall or short for height)
@@ -401,7 +403,7 @@ def id3(examples, attributes, labels, max_depth, info_gain_type, numeric_cols):
                 return get_key_by_max_value(labels)
 
             # Otherwise, recursively add the next subtree
-            new_labels = get_attribute_values(examples_v, len(examples[0])-1)
+            new_labels = get_attribute_values(examples_v, LABEL_INDEX)
             node[value] = id3(examples_v, new_attributes, new_labels, max_depth - 1, info_gain_type, numeric_cols)
 
     return node
@@ -418,6 +420,11 @@ def data_parsing(csv_file):
     with open(csv_file, 'r') as f:
         for line in f:
             data.append(line.strip().split(','))
+            data[len(data)-1].append(1)
+
+    # Storing a weight factor in the last index.
+    LABEL_INDEX = len(data[0])-2
+    WEIGHT_INDEX = len(data[0])-1
 
     return data
 
@@ -491,15 +498,16 @@ def build_decision_tree(file_path, max_depth, info_gain_type, numeric_cols, miss
     """
 
     examples = data_parsing(file_path)
+
     if len(numeric_cols) > 0:
         map_numeric_data(examples, numeric_cols)  # convert numeric data to int type (for this specific application)
 
     if missing_identifier is not None:
         fill_missing_values(examples, missing_identifier)
 
-    labels = get_attribute_values(examples, len(examples[0]) - 1)
+    labels = get_attribute_values(examples, LABEL_INDEX)
 
-    return id3(examples, list(range(len(examples[0])-1)), labels, max_depth, info_gain_type, numeric_cols)
+    return id3(examples, list(range(LABEL_INDEX)), labels, max_depth, info_gain_type, numeric_cols)
 
 ########################################################################################################
 ##########                                BEGIN TEST TREE                                     ##########
@@ -556,8 +564,7 @@ def test_tree(learned_tree, file_path, numeric_cols, missing_identifier):
     if len(numeric_cols) > 0:
         map_numeric_data(examples, numeric_cols)  # convert numeric data to int type (for this specific application)
 
-    label_index = len(examples[0])-1
-    actual_labels = [inst[label_index] for inst in examples]
+    actual_labels = [inst[LABEL_INDEX] for inst in examples]
 
     learned_labels = []
     for instance in examples:
