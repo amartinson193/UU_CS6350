@@ -13,6 +13,7 @@ import ID3
 
 LABEL_INDEX = -1
 WEIGHT_INDEX = -1
+INFO_GAIN_TYPE = 1
 
 
 def ada_boost(examples, iterations, numeric_cols, missing_identifier):
@@ -33,7 +34,7 @@ def ada_boost(examples, iterations, numeric_cols, missing_identifier):
             tree = None
 
         alpha = weight_examples(examples, tree, error, numeric_cols, missing_identifier)
-        tree = ID3.build_decision_tree(examples, 1, 1, numeric_cols, missing_identifier)
+        tree = ID3.build_decision_tree(examples, 1, INFO_GAIN_TYPE, numeric_cols, missing_identifier)
         results = ID3.test_tree(tree, examples, numeric_cols, missing_identifier)
         error = 1 - (results[0] / results[1])
         trees.append(tuple([tree, alpha, error]))
@@ -84,9 +85,9 @@ def get_label(hypothesis, example, numeric_cols, missing_identifier):
             guess -= operand[1]
 
         if guess < 0:
-            result.append("no")
-        else:
             result.append("yes")
+        else:
+            result.append("no")
 
     return result
 

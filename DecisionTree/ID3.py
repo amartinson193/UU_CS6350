@@ -74,6 +74,7 @@ def entropy(labels):
 
 def get_majority_label(attribute):
     majority = 0
+    majority_element = None
     for value in attribute:
         if attribute[value] > majority:
             majority_element = value
@@ -190,8 +191,14 @@ def get_median(examples, col):
     """
     values = []
     for instance in examples:
-        values.append(instance[col]*instance[WEIGHT_INDEX])
-    return numpy.median(values)
+        values.append([instance[col],instance[WEIGHT_INDEX]])
+    values.sort(key=lambda x:x[0])
+
+    sum = 0
+    for pair in values:
+        sum += pair[1]
+        if sum > 0.5:
+            return pair[0]
 
 
 def get_key_by_max_value(dictionary):
