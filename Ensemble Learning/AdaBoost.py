@@ -23,6 +23,8 @@ def ada_boost(examples, iterations, numeric_cols, missing_identifier):
     LABEL_INDEX = len(examples[0]) - 2
     WEIGHT_INDEX = len(examples[0]) - 1
 
+    tree_depth = 1
+
     trees = []
     error = -1
 
@@ -34,7 +36,7 @@ def ada_boost(examples, iterations, numeric_cols, missing_identifier):
             tree = None
 
         alpha = weight_examples(examples, tree, error, numeric_cols, missing_identifier)
-        tree = ID3.build_decision_tree(examples, 1, INFO_GAIN_TYPE, numeric_cols, missing_identifier)
+        tree = ID3.build_decision_tree(examples, tree_depth, INFO_GAIN_TYPE, numeric_cols, missing_identifier)
         results = ID3.test_tree(tree, examples, numeric_cols, missing_identifier)
         error = 1 - (results[0] / results[1])
         trees.append(tuple([tree, alpha, error]))
@@ -47,10 +49,10 @@ def weight_examples(examples, tree, error, numeric_cols, missing_identifier):
         num_examples = len(examples)
         for instance in examples:
             instance[WEIGHT_INDEX] = 1 / num_examples
-        return 1
+        return 0
 
     weight_sum = 0
-    alpha = -0.5 * math.log((1 - error) / error)
+    alpha = 0.5 * math.log((1 - error) / error)
 
     # Calculate new weights.
     for instance in examples:
@@ -62,7 +64,7 @@ def weight_examples(examples, tree, error, numeric_cols, missing_identifier):
         else:
             sign = -1
 
-        instance[WEIGHT_INDEX] = instance[WEIGHT_INDEX] * math.exp(alpha * sign)
+        instance[WEIGHT_INDEX] = instance[WEIGHT_INDEX] * math.exp(-alpha * sign)
         weight_sum += instance[WEIGHT_INDEX]
 
     # Normalize the new weights.
@@ -84,7 +86,7 @@ def get_label(hypothesis, example, numeric_cols, missing_identifier):
         else:
             guess -= operand[1]
 
-        if guess < 0:
+        if guess >= 0:
             result.append("yes")
         else:
             result.append("no")

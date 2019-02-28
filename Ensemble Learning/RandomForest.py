@@ -17,7 +17,7 @@ WEIGHT_INDEX = -1
 INFO_GAIN_TYPE = 1
 
 
-def bagged_trees(examples, iterations, sample_size, numeric_cols, missing_identifier):
+def random_forest(examples, iterations, sample_size, numeric_cols, missing_identifier, feature_size):
     global LABEL_INDEX
     global WEIGHT_INDEX
 
@@ -29,7 +29,7 @@ def bagged_trees(examples, iterations, sample_size, numeric_cols, missing_identi
 
     for t in range(iterations):
         samples.append(resample(examples, sample_size))
-        tree = ID3.build_random_tree(samples[t], -1, INFO_GAIN_TYPE, numeric_cols, missing_identifier)
+        tree = ID3.build_random_tree(samples[t], -1, INFO_GAIN_TYPE, numeric_cols, missing_identifier, feature_size)
         results = ID3.test_tree(tree, examples, numeric_cols, missing_identifier)
         error = 1 - (results[0] / results[1])
         trees.append(tuple([tree, results]))
@@ -67,7 +67,7 @@ def get_label(hypothesis, example, numeric_cols, missing_identifier):
     return result
 
 
-def test_bagged_tree_hypothesis(hypothesis, example_param, numeric_cols, missing_identifier):
+def test_random_forest_hypothesis(hypothesis, example_param, numeric_cols, missing_identifier):
 
     if isinstance(example_param, str):
         examples = ID3.data_parsing(example_param, numeric_cols)

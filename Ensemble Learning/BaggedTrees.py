@@ -24,15 +24,17 @@ def bagged_trees(examples, iterations, sample_size, numeric_cols, missing_identi
     LABEL_INDEX = len(examples[0]) - 2
     WEIGHT_INDEX = len(examples[0]) - 1
 
+    tree_depth = -1
+
     trees = []
     samples = []
 
     for t in range(iterations):
         samples.append(resample(examples, sample_size))
-        tree = ID3.build_decision_tree(samples[t], -1, INFO_GAIN_TYPE, numeric_cols, missing_identifier)
+        tree = ID3.build_decision_tree(samples[t], tree_depth, INFO_GAIN_TYPE, numeric_cols, missing_identifier)
         results = ID3.test_tree(tree, examples, numeric_cols, missing_identifier)
-        error = 1 - (results[0] / results[1])
-        trees.append(tuple([tree, results]))
+        accuracy = results[0] / results[1]
+        trees.append(tuple([tree, accuracy]))
 
     return trees
 
@@ -41,8 +43,8 @@ def resample(examples, sample_size):
     samples = []
 
     for i in range(sample_size):
-        next = random.randint(0,len(examples)-1)
-        samples.append(examples[next])
+        next_index = random.randint(0, len(examples)-1)
+        samples.append(examples[next_index])
 
     return samples
 
@@ -55,9 +57,9 @@ def get_label(hypothesis, example, numeric_cols, missing_identifier):
         label = ID3.get_label(operand[0], example, numeric_cols, missing_identifier)
 
         if label == "yes":
-            guess += 1
+            guess += operand[1]
         else:
-            guess -= 1
+            guess -= operand[1]
 
         if guess < 0:
             result.append("no")

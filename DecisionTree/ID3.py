@@ -12,7 +12,7 @@ Future implementation:
 """
 
 import collections
-import scipy.stats as stats
+import random
 import numpy
 import math
 
@@ -190,14 +190,18 @@ def get_median(examples, col):
     :return: Median of one column of all provided examples as a float.
     """
     values = []
+    total_weight = 0
     for instance in examples:
         values.append([instance[col],instance[WEIGHT_INDEX]])
+        total_weight += instance[WEIGHT_INDEX]
+    # Sort the values
     values.sort(key=lambda x:x[0])
 
+    # Iterate until you reach half the weight of examples.
     sum = 0
     for pair in values:
         sum += pair[1]
-        if sum > 0.5:
+        if sum > total_weight / 2:
             return pair[0]
 
 
@@ -278,7 +282,7 @@ def information_gain_numeric(examples, attribute_index, info_gain_type):
     return gain
 
 
-def get_next_attribute(examples, attributes, info_gain_type, numeric_cols):
+def get_next_attribute(examples, attributes, info_gain_type, numeric_cols, feature_size):
     """
     Calculates the potential gain if a set of examples were to be split by a specific attribute.
     May calculate using entropy, majority error, or Gini index.
@@ -290,10 +294,18 @@ def get_next_attribute(examples, attributes, info_gain_type, numeric_cols):
         2 - Majority Error
         3 - Gini Index
     :param numeric_cols: List of columns which are numeric, must be identified when passing initial dataset.
+    :param feature_size: Number of features to consider when splitting tree.
     :return: index of attribute with highest gain.
     """
+
+    if 0 < feature_size < len(attributes):
+        rand = random.sample(attributes, feature_size)
+        attribute_list = list(rand)
+    else:
+        attribute_list = list(attributes)
+
     next_attribute = (-1,-1)
-    for attribute in attributes:
+    for attribute in attribute_list:
         if attribute in numeric_cols:
             gain = information_gain_numeric(examples, attribute, info_gain_type)
         else:
@@ -342,7 +354,7 @@ def get_examples_by_value_numeric(examples, attribute_index, value, median):
     return example_subset
 
 
-def id3(examples, attributes, labels, max_depth, info_gain_type, numeric_cols):
+def id3(examples, attributes, labels, max_depth, info_gain_type, numeric_cols, feature_size):
     """
     Recursive ID3 implementation.
     :param examples: List of examples, each of which is a list of values.
@@ -354,7 +366,7 @@ def id3(examples, attributes, labels, max_depth, info_gain_type, numeric_cols):
         2 - Majority Error
         3 - Gini Index
     :param numeric_cols: List of indices of numeric columns, to be provided with initial data.
-    :param missing_attributes: List of indices of attributes containing missing values
+    :param feature_size: Number of features to consider when splitting tree.
     :return: node containing either an attribute to split, or a label to assign.
     """
 
@@ -373,7 +385,7 @@ def id3(examples, attributes, labels, max_depth, info_gain_type, numeric_cols):
     # 1 - entropy
     # 2 - majority error
     # 3 - gini index
-    node[math.inf] = get_next_attribute(examples,attributes, info_gain_type, numeric_cols)
+    node[math.inf] = get_next_attribute(examples,attributes, info_gain_type, numeric_cols, feature_size)
     if node[math.inf] in numeric_cols:
         next_attribute_numeric = True
     node[-math.inf] = get_key_by_max_value(labels) # add most common label in case unknown attribute values found
@@ -393,14 +405,14 @@ def id3(examples, attributes, labels, max_depth, info_gain_type, numeric_cols):
             return get_key_by_max_value(labels)
         # Otherwise, recursively add the next subtree
         new_labels = get_attribute_values(examples_less, LABEL_INDEX)
-        node[-1] = id3(examples_less, new_attributes, new_labels, max_depth - 1, info_gain_type, numeric_cols)
+        node[-1] = id3(examples_less, new_attributes, new_labels, max_depth - 1, info_gain_type, numeric_cols, feature_size)
 
         examples_greater = get_examples_by_value_numeric(examples, node[math.inf], 1, node[0])
         if len(examples_greater) == 0:
             return get_key_by_max_value(labels)
         # Otherwise, recursively add the next subtree
         new_labels = get_attribute_values(examples_greater, LABEL_INDEX)
-        node[1] = id3(examples_greater, new_attributes, new_labels, max_depth - 1, info_gain_type, numeric_cols)
+        node[1] = id3(examples_greater, new_attributes, new_labels, max_depth - 1, info_gain_type, numeric_cols, feature_size)
     else:
         # Iterate through values v of a (not label, but value of the attribute, like tall or short for height)
         values = get_attribute_values(examples, node[math.inf])
@@ -414,7 +426,7 @@ def id3(examples, attributes, labels, max_depth, info_gain_type, numeric_cols):
 
             # Otherwise, recursively add the next subtree
             new_labels = get_attribute_values(examples_v, LABEL_INDEX)
-            node[value] = id3(examples_v, new_attributes, new_labels, max_depth - 1, info_gain_type, numeric_cols)
+            node[value] = id3(examples_v, new_attributes, new_labels, max_depth - 1, info_gain_type, numeric_cols, feature_size)
 
     return node
 
@@ -526,7 +538,37 @@ def build_decision_tree(example_param, max_depth, info_gain_type, numeric_cols, 
 
     labels = get_attribute_values(examples, LABEL_INDEX)
 
-    return id3(examples, list(range(LABEL_INDEX)), labels, max_depth, info_gain_type, numeric_cols)
+    return id3(examples, list(range(LABEL_INDEX)), labels, max_depth, info_gain_type, numeric_cols, -1)
+
+
+def build_random_tree(example_param, max_depth, info_gain_type, numeric_cols, missing_identifier, feature_size):
+    """
+    Build a decision tree using ID3
+    :param example_param: Data, or file path to data
+    :param max_depth: Maximum depth of this tree
+    :param info_gain_type:  integer to identify preferred method of gain.
+        1 - Entropy
+        2 - Majority Error
+        3 - Gini Index
+    :param numeric_cols: List of indices indicating which columns are numeric
+    :param missing_identifier: Data within examples indicating a missing value.
+    :param feature_size: Number of features to sample when splitting tree.
+    :return: DefaultDict root of a decision tree
+    """
+
+    if isinstance(example_param, str):
+        examples = data_parsing(example_param, numeric_cols)
+    elif isinstance(example_param, list):
+        examples = example_param
+    else:
+        raise AttributeError("Invalid data type: Please pass either file path or list of examples to build tree.")
+
+    if missing_identifier is not None:
+        fill_missing_values(examples, missing_identifier)
+
+    labels = get_attribute_values(examples, LABEL_INDEX)
+
+    return id3(examples, list(range(LABEL_INDEX)), labels, max_depth, info_gain_type, numeric_cols, feature_size)
 
 ########################################################################################################
 ##########                                BEGIN TEST TREE                                     ##########
@@ -543,6 +585,9 @@ def get_label(learned_tree, example, numeric_cols, missing_identifier):
     :param missing_identifier: Data within examples indicating a missing value.
     :return: Label that learned tree assigns the given example.
     """
+    if not isinstance(learned_tree, collections.defaultdict):
+        return learned_tree
+
     attribute_index = learned_tree[math.inf]
 
     # If the value is missing, pull the most common value of training examples.
