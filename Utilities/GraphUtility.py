@@ -1,4 +1,12 @@
+"""
+Author: John Jacobson (u1201441)
+Created: 2019-03-02
 
+This file contains data presentation utilities, mostly functions for creating charts.
+
+    Coming soon
+
+"""
 
 import matplotlib.pyplot as plt
 

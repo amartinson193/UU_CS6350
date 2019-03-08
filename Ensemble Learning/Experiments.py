@@ -16,6 +16,8 @@ import BaggedTrees
 import RandomForest
 import LeastMeanSquares
 import GraphUtility
+import IOUtilities
+import Perceptron
 
 # FILE_PATH = "/home/john/PycharmProjects/u1201441_Private_Repository/CS6350_Files/HW1/Data/BooleanClassifier_TrainingData.csv"
 FILE_PATH_TRAIN = "/home/john/PycharmProjects/u1201441_Private_Repository/CS6350_Files/HW1/Data/bank/train.csv"
@@ -557,3 +559,65 @@ def manual_lms():
     weight = xinv_x @ y
 
     print(weight)
+
+
+########################################################################################################
+##########                                Perceptron                                          ##########
+########################################################################################################
+########################################################################################################
+
+
+def perceptron_experiment():
+    FILE_PATH_TRAIN = "/home/john/PycharmProjects/u1201441_Private_Repository/CS6350_Files/HW3/bank-note/bank-note/train.csv"
+    FILE_PATH_TEST = "/home/john/PycharmProjects/u1201441_Private_Repository/CS6350_Files/HW3/bank-note/bank-note/test.csv"
+
+    missing_identifier = None
+
+    weights = Perceptron.perceptron(FILE_PATH_TRAIN, 10, missing_identifier)
+
+    # Standard Perceptron Results
+    print("Learned vector - ", weights[-1][0])
+    # Training
+    results = Perceptron.test_perceptron(weights, FILE_PATH_TRAIN,missing_identifier, 1)
+    print("BankNote Data; Test; Standard Perceptron", "Correct -", results[0], "Total -",
+          results[1], "Err -", "{0:.2%}".format(1-results[0]/results[1]))
+    # Test
+    results = Perceptron.test_perceptron(weights, FILE_PATH_TEST,missing_identifier, 1)
+    print("BankNote Data; Test; Standard Perceptron", "Correct -", results[0], "Total -",
+          results[1], "Err -", "{0:.2%}".format(1-results[0]/results[1]))
+
+
+    # Voted Perceptron Results
+    for i in range(1, len(weights)):
+        print("Vector", i, "-", weights[i][0], "Correct Predictions -", weights[i][1])
+    print("Total vectors -", len(weights)-1)
+    # Training
+    results = Perceptron.test_perceptron(weights, FILE_PATH_TRAIN,missing_identifier, 2)
+    print("BankNote Data; Test; Voted Perceptron", "Correct -", results[0], "Total -",
+          results[1], "Err -", "{0:.2%}".format(1-results[0]/results[1]))
+    # Test
+    results = Perceptron.test_perceptron(weights, FILE_PATH_TEST,missing_identifier, 2)
+    print("BankNote Data; Test; Voted Perceptron", "Correct -", results[0], "Total -",
+          results[1], "Err -", "{0:.2%}".format(1-results[0]/results[1]))
+
+
+
+    # Average Perceptron Results
+
+    average = numpy.zeros(len(weights[1][0]))
+    for predictor in weights:
+        if isinstance(predictor, dict):
+            continue
+        average += predictor[0]
+    print("Learned vector - ", average)
+    # Training
+    results = Perceptron.test_perceptron(weights, FILE_PATH_TRAIN,missing_identifier, 3)
+    print("BankNote Data; Test; Average Perceptron", "Correct -", results[0], "Total -",
+          results[1], "Err -", "{0:.2%}".format(1-results[0]/results[1]))
+    # Test
+    results = Perceptron.test_perceptron(weights, FILE_PATH_TEST,missing_identifier, 3)
+    print("BankNote Data; Test; Average Perceptron", "Correct -", results[0], "Total -",
+          results[1], "Err -", "{0:.2%}".format(1-results[0]/results[1]))
+
+
+

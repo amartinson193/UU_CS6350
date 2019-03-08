@@ -44,7 +44,7 @@ def data_parsing(csv_file):
     with open(csv_file, 'r') as f:
         for line in f:
             data.append(line.strip().split(','))
-            data[-1].insert(len(data[-1]), '1')  # Augment with 1
+            data[-1].insert(len(data[-1])-1, '1')  # Augment with 1
 
     # Storing a weight factor in the last index.
     LABEL_INDEX = len(data[0])-1

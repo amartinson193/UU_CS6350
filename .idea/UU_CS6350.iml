@@ -5,6 +5,8 @@
       <sourceFolder url="file://$MODULE_DIR$/DecisionTree" isTestSource="false" />
       <sourceFolder url="file://$MODULE_DIR$/Ensemble Learning" isTestSource="false" />
       <sourceFolder url="file://$MODULE_DIR$/Linear Regression" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/Perceptron" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/Utilities" isTestSource="false" />
     </content>
     <orderEntry type="jdk" jdkName="Python 3.7 (venv)" jdkType="Python SDK" />
     <orderEntry type="sourceFolder" forTests="false" />

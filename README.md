@@ -108,11 +108,16 @@ Coming Soon
 
 -------
 
-Linear Regression
+Linear Classifiers
 -----------------
 -----------------
 
 Least Mean Squares
 ------------------
+
+Coming Soon
+
+Perceptron
+----------
 
 Coming Soon
