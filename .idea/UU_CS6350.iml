@@ -7,6 +7,9 @@
       <sourceFolder url="file://$MODULE_DIR$/Linear Regression" isTestSource="false" />
       <sourceFolder url="file://$MODULE_DIR$/Perceptron" isTestSource="false" />
       <sourceFolder url="file://$MODULE_DIR$/Utilities" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/SVM" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/Neural Networks" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/Logistic Regression" isTestSource="false" />
     </content>
     <orderEntry type="jdk" jdkName="Python 3.7 (venv)" jdkType="Python SDK" />
     <orderEntry type="sourceFolder" forTests="false" />
