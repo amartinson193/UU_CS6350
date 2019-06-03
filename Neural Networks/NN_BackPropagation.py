@@ -1,10 +1,23 @@
+"""
+Author: John Jacobson (u1201441)
+Submission: 4/26/2019
 
+This is an implementation of a dense multi-layer perceptron artificial neural network using backpropagation via stochastic
+gradient descent.
+
+"""
 import numpy as np
-import math
 import IOUtilities
 
 
 def shuffle_in_unison(a, b):
+    """
+    Function for shuffling elements of 2 equal length lists to same state, i.e. indices of each list are shuffled to the
+     same order.
+    :param a:
+    :param b:
+    :return:
+    """
     rng_state = np.random.get_state()
     np.random.shuffle(a)
     np.random.set_state(rng_state)
@@ -12,14 +25,33 @@ def shuffle_in_unison(a, b):
 
 
 def sigmoid(z):
+    """
+    Sigmoid activation function for neural net node.
+    :param z: numeric input
+    :return: sigmoid of input
+    """
     return 1 / (1 + np.exp(-z))
 
 
 def sigmoid_prime(s):
+    """
+    Derivative of sigmoid function for backpropagation. This function assumes that input is already in sigmoid form
+    for purposes of this algorithm.
+    :param s: sigmoid form of numeric input.
+    :return: derivative of sigmoid centered at input to param s.
+    """
     return s * (1 - s)
 
 
 def forward(example, weights):
+    """
+    Forward pass through neural network, mapping the input to a specific output and returning the entire associated
+    network of nodes associated with this input.
+    :param example: numpy array of input to be fed through network
+    :param weights: list of numpy arrays containing weights for each layer transition
+    :return: list of calculated layers (numpy arrays) output from given input example, and list of cached products
+    (numpy arrays) from forward operations, for use in backprop.
+    """
     layers = [example]  # every layer of model, including initial examples and final prediction.
     forward_cache = []  # cached products for backprop, one per weight layer.
     bias = np.array([1])
@@ -44,6 +76,15 @@ def forward(example, weights):
 # mult by label error, then by every weight along the path.
 # cache already contains input and output layer values, just need weights
 def back_prop(layers, forward_cache, weights, true_label, learning_rate):
+    """
+    Backpropagation phase, updates given set of layer-transition weights in-place using stochastic gradient descent.
+    :param layers: Calculated layers from forward pass of network (returned by forward())
+    :param forward_cache: Cached products from forward pass of network (returned by forward())
+    :param weights: Current list of weight arrays
+    :param true_label: True output of current example for calculating loss
+    :param learning_rate: Learning constant for SGD, should be updated with an appropriate learning schedule.
+    :return: N/A
+    """
     hidden_layers = len(layers) - 2  # initial layer is input, final layer is prediction.
     layer_width = layers[-2].size - 1
     err = layers[-1] - true_label

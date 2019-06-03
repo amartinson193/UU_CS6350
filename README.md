@@ -1,4 +1,10 @@
-This is a machine learning library developed by John Jacobson for CS5350/6350 in University of Utah
+This is a machine learning library developed by John Jacobson for CS5350/6350 in University of Utah.
+
+Please be aware that creating this code was my first exposure to Python, as well as to these algorithms. All code was 
+created solely by me with no assistance, aside from online documentation and course materials, in my free time. I 
+learned a lot over the course of creating this library, but obviously am still far from perfect. As I have free time I 
+will work to improve and add more functionality as a learning opportunity, so I'm always open to suggestions.
+
 
 Source
 ~~~~~~
@@ -284,8 +290,7 @@ Linear Classifiers
 Least Mean Squares
 ------------------
 
-This is an implementation of a random forest algorithm for CS6350 at University of Utah in Spring 2019. Utilizes 
-decision trees built in the ID3 framework on random attribute sets on bagged samples from the training data set.
+This is an implementation of a least mean squares algorithm for CS6350 at University of Utah in Spring 2019.
 
 Build Hypothesis
 ~~~~~~~~~~
@@ -329,6 +334,18 @@ test_lms
 ~~~~~~~~~~
 
 Perceptron
+----------
+
+Coming Soon
+
+
+Support Vector Machine
+----------
+
+Coming Soon
+
+
+Artificial Neural Network
 ----------
 
 Coming Soon

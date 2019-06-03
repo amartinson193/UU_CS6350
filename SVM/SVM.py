@@ -2,9 +2,10 @@
 Author: John Jacobson (u1201441)
 Created: 2019-03-02
 
-This is an implementation of the Perceptron algorithm for CS6350 at University of Utah in Spring 2019.
+This is an implementation of a support vector machine algorithm. Includes both primal and dual domain implementations,
+as well as Gaussian kernel for feature lifting.
 
-    Coming soon
+Incomplete
 
 """
 import numpy

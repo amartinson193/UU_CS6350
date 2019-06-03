@@ -5,7 +5,6 @@ Created: 2019-03-02
 This file contains data I/O utilities, functions for reading, writing,
 and processing data for the included machine learning algorithms.
 
-    Coming soon
 
 """
 import numpy
@@ -67,8 +66,7 @@ def data_parsing_numeric(csv_file):
 def map_numeric_data(data, col_nums):
     """
     Converts strings to floats in the provided column.
-    NOTE: This modifies the data set passed into the algorithm directly; to work with unmodified data, it must be
-        read in again.
+    NOTE: This modifies the data set in place.
     :param data: data to be modified
     :param col_nums: index of column to be modified
     :return: None
